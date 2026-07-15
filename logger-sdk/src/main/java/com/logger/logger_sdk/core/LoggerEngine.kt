@@ -40,23 +40,15 @@ internal class LoggerEngine<T>(
         startCollector()
     }
 
-    //Public ifade de bunların önceki methodu olan EngineCommand typelarını vereceğim içte Logger.sendLog,sendForceFlush gibi.
     internal suspend fun sendAction(action: EngineCommand) {
         channel.send(action)
     }
 
-    /**
-     * Channel'dan sürekli veri tüketir.
-     * Tek coroutine çalışır.
-     */
     private fun startCollector() {
         scope.launch {
             val logList = mutableListOf<T>()
 
             while (isActive) {
-                //select her döngüde tekrar çalışır mesela onReceive oldu bitti.Yeniden gelince tekrar çalışır sıfırlar
-                //bundan dolayı timeout olayı burda patlar gelen süre dolmadan tekrar başlar.Ama biz öyle olmasını istemiyoruz.
-                // Oyüzden kendi timeout sayacımı yazdım.
                 select {
                     channel.onReceive { command: EngineCommand ->
                         when (command) {
@@ -82,8 +74,6 @@ internal class LoggerEngine<T>(
                                 scope.cancel()
                             }
 
-                            //TODO : İnternet geldiğinde de roomdan okuyup verileri göndermeliyiz.Sonrasında roomdan silmeliyiz.
-                            // Bunun için roomdan okuduktan sonra callbackimi doğrudan tetikliyorum channelimi hiç doldurmuyorum.
                             is EngineCommand.NetworkAvailable -> {
                                 isOnline = true
                                 flushOfflineLogs()
@@ -91,10 +81,7 @@ internal class LoggerEngine<T>(
                             }
 
                             is EngineCommand.NetworkLost -> {
-                                //TODO : İnternet gittiğinde channeldaki verileri aslında bufferdaki verileri okuyup rooma gömeceğiz
-                                // 1. RAM'deki bekleyen logları Room'a taşı.
-                                // 2. Bundan sonra gelecek loglar doğrudan Room'a yazılacak.
-                                //flush(logList)
+                                stopFlushTimer()
                                 isOnline = false
 
                                 if (logList.isNotEmpty()) {
@@ -124,9 +111,6 @@ internal class LoggerEngine<T>(
         }
     }
 
-    /**
-     * Batch gönder.
-     */
     private suspend fun flushMemoryLogs(
         buffer: MutableList<T>
     ) {
@@ -171,7 +155,6 @@ internal class LoggerEngine<T>(
         }
     }
 
-    //TODO : İnternet gittiğinde timer nasıl davranmalı ??
     private fun stopFlushTimer() {
         flushTimerJob?.cancel()
         flushTimerJob = null

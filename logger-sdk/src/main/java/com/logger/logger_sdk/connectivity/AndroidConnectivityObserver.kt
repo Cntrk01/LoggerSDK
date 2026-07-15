@@ -10,15 +10,6 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 
-//Bunu kolayca önlemek için observer'ı kullanan tarafta:
-//
-//connectivityObserver
-//    .observe()
-//    .distinctUntilChanged()
-//    .collect { ... }
-//
-//kullanabilirsin. Böylece Available → Available → Available gibi tekrarlar filtrelenir ve engine gereksiz yere aynı komutu işlemez.
-// Bu, özellikle farklı üreticilerin Android sürümlerindeki callback davranışlarına karşı güzel bir koruma sağlar.
 internal class AndroidConnectivityObserver(
     context: Context
 ) : ConnectivityObserver {
