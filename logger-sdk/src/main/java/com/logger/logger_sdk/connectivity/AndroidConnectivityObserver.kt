@@ -1,9 +1,11 @@
 package com.logger.logger_sdk.connectivity
 
+import android.Manifest
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -26,6 +28,7 @@ internal class AndroidConnectivityObserver(
             ConnectivityManager::class.java
         )
 
+    @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     override fun observe(): Flow<ConnectionState> = callbackFlow {
         trySend(currentConnectionState())
 
