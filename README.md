@@ -185,16 +185,22 @@ implementation("com.github.Cntrk01:logger-sdk:1.0.0")
 
 Initialize the SDK inside your `Application` class.
 
-```kotlin
-class App : Application() {
+Add the required permission.
 
+```xml
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+```
+
+```kotlin
+class LoggerApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-
         Logger.initialize(
             application = this,
             config = SdkConfig(
-                logDestination = ApiDestination()
+                logDestination = ApiLogDestination(),
+                batchSize = 20,
+                timeoutMs = 30_000
             )
         )
     }
@@ -206,11 +212,22 @@ class App : Application() {
 # 📝 Send Logs
 
 ```kotlin
-Logger.sendLog(
-    ScreenLog(
-        screen = "Home"
-    )
-)
+Main Activity : 
+        
+LaunchedEffect(Unit) {
+
+    repeat(5) { index ->
+
+        Logger.sendLog(
+            ScreenLog(
+                screen = "Home",
+                action = "Opened ${index + 1}"
+            )
+        )
+
+        delay(1000)
+    }
+}
 ```
 
 Force upload manually.
@@ -234,7 +251,7 @@ The SDK does not impose how logs should be uploaded.
 Simply implement your own destination.
 
 ```kotlin
-class ApiDestination : LogDestination<ScreenLog> {
+class ApiLogDestination : LogDestination<ScreenLog> {
 
     override val serializer = ScreenLogSerializer()
 
@@ -242,8 +259,16 @@ class ApiDestination : LogDestination<ScreenLog> {
         logs: List<ScreenLog>
     ) {
 
-        // Upload logs to your backend
+        println("Uploading ${logs.size} logs")
 
+        logs.forEach {
+            println(it)
+        }
+
+        // Retrofit
+        // Ktor
+        // Firebase
+        // Your backend
     }
 }
 ```
@@ -270,25 +295,26 @@ Example:
 ```kotlin
 class ScreenLogSerializer : LogSerializer<ScreenLog> {
 
-    override fun serialize(
-        value: ScreenLog
-    ): String {
-
+    override fun serialize(value: ScreenLog): String {
         return Gson().toJson(value)
-
     }
 
-    override fun deserialize(
-        value: String
-    ): ScreenLog {
-
+    override fun deserialize(value: String): ScreenLog {
         return Gson().fromJson(
             value,
             ScreenLog::class.java
         )
-
     }
 }
+```
+
+# Model 
+Example : 
+```kotlin
+data class ScreenLog(
+    val screenName: String,
+    val openedAt: Long,
+)
 ```
 
 Because of this mechanism, the SDK can persist **any model**.
@@ -327,19 +353,12 @@ As long as a matching `LogSerializer<T>` is provided, the SDK can persist and up
 
 ```kotlin
 SdkConfig(
-
     logDestination = ApiDestination(),
-
     batchSize = 20,
-
     timeoutMs = 30_000,
-
     channelCapacity = Channel.BUFFERED,
-
     maxOfflineFlushSize = 50,
-
     offlineSyncIntervalMs = 1_000
-
 )
 ```
 
@@ -399,3 +418,9 @@ Feel free to open an Issue or submit a Pull Request.
 This project is licensed under the MIT License.
 
 See the **LICENSE** file for more information.
+
+## ⭐ Support
+
+If you find Logger SDK useful, consider giving the project a ⭐ on GitHub.
+
+It helps the project grow and motivates future development.
